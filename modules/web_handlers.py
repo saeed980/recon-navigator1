@@ -1,16 +1,17 @@
+# modules/web_handlers.py - تحديث المنطق
 WEB_MATRIX = {
-    "xss_mindset": {
-        "keywords": ["xss", "script", "input"],
-        "title": "Cross-Site Scripting Strategy",
-        "methodology": "لا تركز فقط على الـ Alerts. ابحث عن تسريب الـ Cookies أو الـ CSRF Tokens عبر الـ XSS.",
-        "command": "dalfox url [TARGET] --blind [YOUR_COLLABORATOR]",
-        "pro_tip": "جرب الـ Mutation XSS؛ فالمتصفحات الحديثة لديها فلاتر لكنها تفشل أمام تغيير هيكلة الـ DOM."
+    "biz_logic": {
+        "keywords": ["price", "checkout", "balance", "cart"],
+        "title": "Business Logic - The Big Questions",
+        "methodology": "هل التطبيق يستخدم RESTful؟ جرب التلاعب بالموارد (`/api/v1/cart/999`) وتغيير الحالة (Status) أو القيم المالية.",
+        "command": "Burp Repeater: Change POST body price to -1",
+        "pro_tip": "أخطر ثغرات الـ Biz Logic هي التي تظهر في عمليات الـ Checkout (مثلاً: إضافة قسيمة خصم مرتين)."
     },
-    "idor_mindset": {
-        "keywords": ["id=", "user_id", "account", "profile"],
-        "title": "IDOR & Access Control Logic",
-        "methodology": "IDOR لا يعتمد على الـ ID فقط، بل على استبدال الـ UUID أو الـ Session ID بين حسابين.",
-        "command": "autorize (Burp Extension)",
-        "pro_tip": "دائماً جرب تغيير الـ HTTP Method من GET إلى PUT/POST/DELETE، فكثيراً ما تُحمى الـ GET فقط."
+    "api_analysis": {
+        "keywords": ["graphql", "api", "json"],
+        "title": "API & GraphQL Heat Mapping",
+        "methodology": "APIs هي واجهة التطبيق الحقيقية. ابحث عن نقاط النهاية (Endpoints) غير الموثقة (Undocumented APIs).",
+        "command": "nmap --script http-enum,http-methods -p 80,443 [DOMAIN]",
+        "pro_tip": "استخدم Burp لجمع الـ API Documentation (Swagger/OpenAPI) فهي خارطة طريق للثغرات."
     }
 }
