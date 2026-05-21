@@ -1,16 +1,22 @@
+# modules/infra_handlers.py - تحديث خبير الاستطلاع
 INFRA_MATRIX = {
-    "asn_recon": {
-        "keywords": ["asn", "ip", "range", "cidr"],
-        "title": "Infrastructure & ASN Recon",
-        "methodology": "ASN Recon ليس مجرد IP، هو خريطة لسطح هجوم الشركة بالكامل. ابحث عن النطاقات غير المدارة.",
-        "command": "amass intel -asn [ASN] | httpx -title",
-        "pro_tip": "الـ ASN يكشف خوادم التطوير (Staging) التي نسي المطورون إغلاقها خلف الـ WAF."
+    "recon_suite": {
+        "keywords": ["recon", "asn", "whois", "dns", "acquisitions"],
+        "title": "Elite Reconnaissance & Asset Mapping",
+        "methodology": """
+        • **ASN/CIDR:** استخراج النطاق الجغرافي والشبكي (BGP Analysis).
+        • **Acquisitions:** تتبع الشركات المستحوذ عليها (مساحة هجومية منسية).
+        • **Metadata Sources:** تحليل سجلات DMARC و SPF لكشف النطاقات الداخلية.
+        • **Reverse Tactics:** استخدام Reverse DNS/IP لربط الخوادم ببعضها.
+        """,
+        "command": "amass intel -asn [ASN] -o assets.txt && cat assets.txt | httpx -tech-detect",
+        "pro_tip": "ابحث دائماً عن الـ Acquisitions، غالباً ما تكون خوادمها لا تزال مرتبطة بالـ SSO الخاص بالشركة الأم."
     },
-    "sub_takeover": {
-        "keywords": ["cname", "takeover", "subdomain"],
-        "title": "Subdomain Takeover Intelligence",
-        "methodology": "ابحث عن الـ CNAME الذي يشير لخدمة خارجية (GitHub, Heroku) غير موجودة حالياً.",
-        "command": "subfinder -d [DOMAIN] | nuclei -t exposures/subdomain-takeover.yaml",
-        "pro_tip": "لا تكتفِ بـ CNAME، أحياناً يكون الـ NS (Name Server) هو المفتاح للسيطرة الكاملة."
+    "heat_map_uploads": {
+        "keywords": ["upload", "file", "image", "xml"],
+        "title": "Heat Map: File Uploads & XML",
+        "methodology": "تحليل الـ Metadata داخل الملفات المرفوعة. إذا كان الملف XML، اختبر XXE فوراً. تأكد من الـ Binary Header.",
+        "command": "ffuf -w wordlists/files.txt -u [URL]/upload -X POST",
+        "pro_tip": "دائماً اختبر الـ SSRF إذا كان الموقع يسمح برفع ملف من رابط خارجي (Remote URL Upload)."
     }
 }
