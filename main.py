@@ -288,4 +288,213 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
+    # main.py
+
+import os
+import re
+import sys
+from dotenv import load_dotenv
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+
+# محاولة استيراد البيانات الاستراتيجية مع معالجة غياب الملف
+try:
+    from config import STRATEGIC_RECON, DECISION_TREE
+except ImportError:
+    STRATEGIC_RECON = {}
+    DECISION_TREE = {}
+
+load_dotenv()
+TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+
+if not TOKEN:
+    print("❌ خطأ حرج: لم يتم العثور على توكن البوت في ملف .env.")
+    sys.exit(1)
+
+# ==========================================
+# [1] لوحات التحكم والملاحة (Menus)
+# ==========================================
+
+def get_welcome_menu():
+    keyboard = [
+        [InlineKeyboardButton("⚔️ وضع المحلل الميداني (أرسل مخرجاتك مباشرة)", callback_data="system_custom_input")],
+        [InlineKeyboardButton("🌲 محرك اتخاذ القرارات الشجرية الاستراتيجية", callback_data="system_tree_home")],
+        [InlineKeyboardButton("🗺️ دليل خريطة طريق الاستطلاع الـ 11", callback_data="system_recon_home")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+# ==========================================
+# [2] محرك التحليل التقني والاستراتيجي الشامل (The Core Engine)
+# ==========================================
+
+def advanced_hunter_classifier(user_text: str):
+    """
+    محرك ذكي متقدم يقوم بفرز تكنولوجيات الويب ومخرجات الـ Recon بدقة عالية
+    تمنع التداخل السياقي (False Positives).
+    """
+    t = user_text.lower()
+    
+    # -------------------------------------------------------------
+    # أولاً: تصنيف منصات إدارة المحتوى وتكنولوجيات الويب (CMS & Tech Stack) - لمنع الخلط
+    # -------------------------------------------------------------
+    
+    # 1. ووردبريس (WordPress CMS)
+    if any(x in t for x in ["wordpress", "wp-", "wp_"]):
+        return (
+            "🧬 Tech Stack: WordPress CMS Discovery",
+            "Informational / Medium (حسب ثغرات الإضافات الملحقة)",
+            "• **توجيه المعلم:** الهدف يعمل بنظام WordPress. لا تضيع وقتك في فحص النواة الرئيسية للمنصة، بل صب تركيزك بالكامل على استخراج الإضافات (Plugins) والقوالب (Themes) المنصبة، حيث تقع 90% من ثغرات الـ Web في الـ WordPress هناك (مثل XSS, SQLi, LFI).\n• **المنهجية:** ابحث عن مسارات مثل `/wp-content/plugins/` وفحص ملف الـ `xmlrpc.php` وإمكانية تخمين أسماء المستخدمين.",
+            "wpscan --url [TARGET] --enumerate p,t,u --plugins-detection aggressive"
+        )
+        
+    # 2. أنظمة إدارة المحتوى الأخرى (Drupal, Joomla, Magento, Shopify)
+    elif any(x in t for x in ["drupal", "joomla", "magento", "shopify", "bitrix", "squarespace"]):
+        cms_name = "Shopify/E-Commerce" if "shopify" in t else "Enterprise CMS"
+        return (
+            f"🛍️ Tech Stack: {cms_name} Platform Detected",
+            "Informational / Medium",
+            f"• **توجيه المعلم:** رصد منصة `{cms_name}` يعني وجود بنية تحتية مخصصة لإدارة المحتوى أو التجارة الإلكترونية. ابحث عن ثغرات ضبط الإعدادات الخاطئة (Misconfigurations)، النسخ الاحتياطية المتروكة، أو لوحات الإدارة المكشوفة.\n• **المنهجية:** استخدام قوالب Nuclei المخصصة للمنصة المستهدفة لفحص الثغرات الشائعة والـ CVEs المعروفة.",
+            "nuclei -u [TARGET] -tags cve,cms,panel"
+        )
+
+    # 3. إطارات عمل الـ جافاسكريبت الحديثة (React, Angular, Vue, Next.js)
+    elif any(x in t for x in ["react", "angular", "vue.js", "next.js", "nuxt", "svelte", "webpack"]):
+        return (
+            "⚛️ Tech Stack: Modern Single Page Application (SPA / JS Framework)",
+            "Informational (تتطلب فحص ملفات المصدر)",
+            "• **توجيه المعلم:** المواقع التي تُبنى باستخدام React أو Angular تقوم بتحميل الكثير من المنطق البرمجي في متصفح العميل (Client-Side). هذا يعني أن ملفات الـ `.js` والـ Source Maps هي منجم ذهب حقيقي لك!\n• **المنهجية:** قم بعمل كشط وتحليل لملفات الجافاسكريبت لاستخراج الـ Endpoints المخفية، مفاتيح الـ API الممررة بالخطأ، ومسارات المطورين السرية.",
+            "trufflehog verified --gitleaks أو secretfinder -i [JS_URL]"
+        )
+
+    # 4. بيئات ولغات البرمجة الخلفية والخوادم (Backend & Web Servers)
+    elif any(x in t for x in ["apache", "nginx", "iis", "tomcat", "node.js", "express", "laravel", "django", "spring boot"]):
+        server_tech = "Java/Enterprise Server" if "tomcat" in t or "spring" in t else "Backend Environment"
+        return (
+            f"💻 Tech Stack: {server_tech} & Web Server Infrastructure",
+            "Informational / High (إذا كان الإصدار قديماً)",
+            f"• **توجيه المعلم:** تحديد خادم الويب (مثل Nginx أو Apache) أو إطار العمل الخلفي (مثل Spring Boot أو Laravel) هو خطوة ممتازة. ابحث فوراً عن صفحات الخطأ الافتراضية، ومسارات الإدارة المخفية، وثغرات الـ Request Smuggling أو الـ Remote Code Execution (RCE) المرتبطة بالإصدار المستعمل.\n• **المنهجية:** فحص الـ Headers بذكاء ومقارنة البصمات البرمجية.",
+            "whatweb -a 3 [TARGET]"
+        )
+
+    # 5. جدران حماية تطبيقات الويب (WAF - Cloudflare, Akamai, Incapsula)
+    elif any(x in t for x in ["cloudflare", "akamai", "incapsula", "sucuri", "f5 big-ip", "barracuda"]):
+        return (
+            "🛡️ Infrastructure: Web Application Firewall (WAF) Detected",
+            "Informational (حظر تكتيكي)",
+            "• **توجيه المعلم:** الهدف محمي خلف جدار حماية (WAF). تشغيل عمليات الفحص الهجومية المكثفة الآن سيؤدي لحظر الـ IP الخاص بك فوراً. تكتيكك الأساسي الآن هو العثور على عنوان الـ IP الحقيقي للخادم (Origin IP) لتخطي الـ WAF والوصول للهدف مباشرة.\n• **المنهجية:** ابحث في سجلات التاريخ لـ DNS (DNS History) أو عبر شهادات SSL القديمة في شيردان لمعرفة الـ IP الحقيقي قبل خلف الـ Proxy.",
+            "wafw00f [TARGET] أو shodan search 'ssl:[DOMAIN]'"
+        )
+
+    # -------------------------------------------------------------
+    # ثانياً: تصنيفات مخرجات الاستطلاع العام (Recon & Infrastructure)
+    # -------------------------------------------------------------
+
+    # 6. الـ ASN (تم تعديل الـ Regex ليكون صارماً جداً ولا يلتقط أحرف الكلمات العادية)
+    elif "asn" in t or re.search(r"\bas\d{3,}\b", t):
+        return (
+            "🌐 Autonomous System Numbers (ASN) Reconnaissance",
+            "Informational",
+            "• **توجيه المعلم:** رصد نطاق الـ ASN يمنحك المساحة الكاملة لملكية الشركة من الـ IP Blocks. قم بسحب شبكات الـ CIDR وفحص الأجهزة المستضافة بشكل مستقل بعيداً عن نطاقات الويب التقليدية لمعرفة الخوادم غير المحمية.",
+            "amass intel -asn [ASN_NUMBER] -o asn_ips.txt"
+        )
+    
+    # 7. التخزين السحابي (Cloud Buckets)
+    elif any(x in t for x in ["s3://", "amazonaws", "storage.googleapis", "digitaloceanspaces", "blob.core.windows.net"]):
+        if any(x in t for x in ["200", "public", "listing", "allow"]):
+            return (
+                "☁️ Cloud Recon (🚨 ثغرة مستودع سحابي مكشوف للعامة)",
+                "🚨 Critical / High",
+                "• **توجيه المعلم:** المستودع يسمح بالقراءة العامة أو سرد الملفات! ابحث فوراً عن ملفات الـ Source Code المسربة، قواعد البيانات الاحتياطية، أو معلومات المستخدمين الحساسة لإثبات الأثر الأمني البالغ.",
+                "aws s3 ls s3://[Bucket_Name] --no-sign-request"
+            )
+        else:
+            return (
+                "☁️ Cloud Recon (مستودع مغلق القراءة)",
+                "Low",
+                "• **توجيه المعلم:** السرد مغلق، ولكن اختبر دائماً ثغرة الرفع العشوائي (Arbitrary File Upload) باستخدام أداة AWS CLI بحساب مخصص للتحقق من صلاحيات الكتابة.",
+                "aws s3 cp test.txt s3://[Bucket_Name]/test.txt"
+            )
+
+    # 8. معرفات التتبع (Ad & Analytics)
+    elif any(x in t for x in ["ua-", "gtm-", "pub-", "googleanalytics", "analytics"]):
+        return (
+            "📊 Ad and Analytics Relationships Tracking",
+            "Informational / Medium",
+            "• **توجيه المعلم:** تتبع معرفات التحليلات المشتركة سيكشف لك المواقع السرية والبيئات التجريبية (Staging) للشركة والتي تحمل نفس الكود الإعلاني، مما يفتح لك أهدافاً جديدة غير مطروقة بالـ Scope.",
+            "python3 get_analytics_relationship.py -u [TARGET]"
+        )
+
+    # 9. الرد الافتراضي الذكي لأي مخرجات أخرى
+    else:
+        return (
+            "📝 مخرجات استطلاع عامة (Raw Recon Data)",
+            "Informational",
+            "• **توجيه المعلم:** تم استقبال البيانات. لضمان المنهجية الصحيحة، الخطوة الحالية هي تمرير هذه البيانات عبر أداة الفرز `httpx` للتأكد من استجابة المواقع الحية وعزل الـ Status Codes وعناوين الصفحات قبل اختيار أداة الاختراق المناسبة.",
+            "httpx -l targets.txt -sc -td -title"
+        )
+
+# ==========================================
+# [3] معالجة الرسائل والـ Callbacks
+# ==========================================
+
+async def analyze_user_recon(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        user_text = update.message.text
+        title, severity, methodology, next_command = advanced_hunter_classifier(user_text)
+
+        report = (
+            f"🎯 **[تقرير خبير الـ Bug Bounty الميداني]**\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🔍 **التقنيات والسياق المكتشف:**\n*{title}*\n\n"
+            f"⚠️ **الخطورة التقديرية (Severity):** `{severity}`\n\n"
+            f"💡 **توجيه المعلم والمنهجية (Hunter Methodology):**\n{methodology}\n\n"
+            f"💻 **الأمر التكتيكي الفعال لتشغيله الآن (Next Command):**\n"
+            f"`{next_command}`\n\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"👊 انسخ أي مخرجات ريكون أو تكنولوجيات جديدة، وسأقوم بفرزها لك في ثانية!"
+        )
+
+        keyboard = [[InlineKeyboardButton("🔝 العودة للقائمة الرئيسية", callback_data="go_to_bot_root")]]
+        await update.message.reply_text(text=report, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    except Exception as e:
+        print(f"❌ Error in message handler: {e}")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    welcome_text = (
+        "⚔️ **مرحباً بك في نظام الـ Bug Bounty Mentor الذكي** ⚔️\n\n"
+        "لقد تم تحديث عقلي البرمجي بالكامل لامتلاك **قوة فرز شاملة لتكنولوجيات الويب (CMS, WAF, Frameworks, Backend)** ومنع التداخل البرمجي الزائف.\n\n"
+        "👇 ارمي لي أي نتائج فحص تكنولوجيات (مثل مخرجات Wappalyzer أو httpx) أو مخرجات طرفية مباشرة:"
+    )
+    await update.message.reply_text(text=welcome_text, reply_markup=get_welcome_menu(), parse_mode="Markdown")
+
+async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    try:
+        if data == "go_to_bot_root":
+            welcome_text = "⚔️ **نظام التحكم المركزي** ⚔️\n\nاختر مسار العمل المطلوب من الأسفل:"
+            await query.edit_message_text(text=welcome_text, reply_markup=get_welcome_menu(), parse_mode="Markdown")
+            return
+        if data == "system_custom_input":
+            await query.edit_message_text(
+                text="🧠 **وضع مستشار الـ Bug Bounty المتقدم نشط**\n\nقم بلصق مخرجات التكنولوجيات المكتشفة أو نتائج الأدوات مباشرة في الشات وسأتولى الفرز الاستراتيجي التكتيكي فوراً.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ تراجع", callback_data="go_to_bot_root")]]),
+                parse_mode="Markdown"
+            )
+            return
+    except Exception as e:
+        print(f"❌ Error in callback router: {e}")
+
+def main():
+    application = Application.builder().token(TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(callback_router))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, analyze_user_recon))
+    
+    print("🚀 تم الإطلاق بنجاح! محرك التكنولوجيات الشامل جاهز للعمل...")
+    application.run_polling()
+
+if __name__ == '__main__':
+    main()
     main()
