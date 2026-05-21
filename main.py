@@ -1,7 +1,6 @@
 # main.py
 
 import os
-import re
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
@@ -23,7 +22,7 @@ if not TOKEN:
 def get_welcome_menu():
     """اللوحة الترحيبية المركزية لمجتمع Bug Bounty"""
     keyboard = [
-        [InlineKeyboardButton("⚔️ وضع المحلل والخبير الميداني (أرسل مخرجاتك)", callback_data="system_custom_input")],
+        [InlineKeyboardButton("⚔️ وضع المحلل الميداني (أرسل مخرجاتك مباشرة)", callback_data="system_custom_input")],
         [InlineKeyboardButton("🌲 محرك اتخاذ القرارات الشجرية الاستراتيجية", callback_data="system_tree_home")],
         [InlineKeyboardButton("🗺️ دليل خريطة طريق الاستطلاع الـ 11", callback_data="system_recon_home")]
     ]
@@ -70,125 +69,201 @@ def get_action_buttons(next_key):
     return InlineKeyboardMarkup(keyboard)
 
 # ==========================================
-# [2] دوال التنسيق للمراحل الثابتة
+# [2] محرك التحليل الاستراتيجي المتقدم لمجتمع الـ Bug Bounty
 # ==========================================
 
-def format_recon_response(key):
-    node = STRATEGIC_RECON[key]
-    next_node_key = node["chain_next"]
-    next_node_title = STRATEGIC_RECON[next_node_key]["title"]
+def advanced_hunter_classifier(user_text: str):
+    """
+    محرك ذكي لتحليل مخرجات صيد الثغرات وتصنيفها بناءً على الـ 24 مهارة تكتيكية المتقدمة.
+    يعود بـ: (العنوان، مستوى الخطورة، التوجيه المنهجي المخصص، الأمر التالي المقترح)
+    """
+    t = user_text.lower()
     
-    formatted_text = (
-        f"📍 **{node['title']}**\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📋 **الخطوات المنهجية (Methodology):**\n"
-        f"{node['methodology']}\n\n"
-        f"➡️ **Next Step (ماذا تفعل الآن):**\n"
-        f"{node['next_step']}\n\n"
-        f"💡 **Why this matters:**\n"
-        f"{node['why_matters']}\n\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🔗 **المسار التالي:** {next_node_title}"
-    )
-    return formatted_text, next_node_key
+    # 1. Autonomous System Numbers (ASN)
+    if "asn" in t or "as" in t or re.search(r"as\d+", t):
+        return (
+            "🌐 Autonomous System Numbers (ASN) Reconnaissance",
+            "Informational (تحديد النطاق العريض)",
+            "• **توجيه المعلم:** رصد أرقام الـ ASN يسمح لك بامتلاك كامل المساحة الرقمية للشركة (IP Blocks). لا تقم بفحص نطاق واحد، بل اسحب نطاقات الـ CIDR كاملة التابعة لهذا الـ ASN للتنقيب عن أجهزة منسية خلف جدران الحماية.\n• **المنهجية المستهدفة:** تجميع الـ IP Ranges ثم تصفيتها والبحث عن خدمات غير تقليدية.",
+            "amass intel -asn [ASN_NUMBER] -o asn_ips.txt"
+        )
+    
+    # 2. Microsoft Interrogation (Azure / O365 / Exchange)
+    elif any(x in t for x in ["azure", "windows.net", "onmicrosoft", "sharepoint", "lync"]):
+        return (
+            "🏢 Microsoft Interrogation & Infrastructure Mapping",
+            "Medium إلى High (حسب الثغرة المكتشفة)",
+            "• **توجيه المعلم:** أهداف مايكروسوفت السحابية والـ Azure Tenant تمتلك ثغرات خطيرة مثل استنشاق أسماء المستخدمين (User Enumeration) أو العثور على مستودعات Blob عامة غير محمية.\n• **المنهجية المستهدفة:** كشف الـ Active Tenant والتأكد من الصلاحيات المتاحة ومنافذ الـ Exchange المفتوحة.",
+            "o365recon -d target.com"
+        )
+        
+    # 3. Ad and Analytics Relationships & Tracking Data
+    elif any(x in t for x in ["ua-", "gtm-", "pub-", "googleanalytics", "adsense", "analytics"]):
+        return (
+            "📊 Ad and Analytics Relationships & Tracking Data",
+            "Informational / Medium (كشف الأصول المخفية)",
+            "• **توجيه المعلم:** هذه واحدة من أقوى الحيل التكتيكية! الشركات تضع نفس معرفات تتبع جوجل (Google Analytics ID / Tag Manager) على مواقعها الرسمية ومواقعها السرية أو بيئات التطوير غير المدرجة بالنطاقات الفرعية. تتبع المعرف سيقودك فوراً لأصول مجهولة داخل الـ Scope.\n• **المنهجية المستهدفة:** استخدام أدوات أو مواقع هندسة عكسية لمعرفات التتبع لبناء خريطة أصول موحدة.",
+            "python3 get_analytics_relationship.py -u https://target.com"
+        )
+        
+    # 4. Acquisitions & Corporate Mapping (WHOIS / Registrant)
+    elif any(x in t for x in ["registrant", "organization:", "registrar:", "abuse email"]):
+        return (
+            "🏢 Acquisitions & Corporate Target Expansion",
+            "Informational (توسيع رقعة الهجوم)",
+            "• **توجيه المعلم:** إذا كان الموقع الرئيسي محمياً جداً، ابحث عن الشركات التابعة والمستحوذ عليها حديثاً (Acquisitions) من خلال بيانات المسجل في الـ WHOIS. غالباً ما تمتلك هذه الشركات المستحوذة حماية ضعيفة ومكافآتها مقبولة بنفس البرنامج.\n• **المنهجية المستهدفة:** مطابقة اسم المؤسسة أو البريد الإلكتروني للمسؤول لاستخراج نطاقات أخرى تابعة.",
+            "bbscope h1 -t [Program_Name] --active"
+        )
+
+    # 5. Reverse WHOIS
+    elif "reverse whois" in t or "whois lookup" in t:
+        return (
+            "📇 Reverse WHOIS Discovery",
+            "Informational",
+            "• **توجيه المعلم:** استخدم اسم الشركة المستهدفة أو بريد مسؤول التسجيل للبحث بالمعكوس عن كل النطاقات المسجلة بهذا الاسم عبر التاريخ.\n• **المنهجية المستهدفة:** تصفية الأهداف الميتة والتركيز على النطاقات الفعالة التابعة للمؤسسة.",
+            "whoxy -keyword 'Target Company LLC' --reverse"
+        )
+
+    # 6. Cloud Recon featuring Golden (S3 Buckets, GCP, Azure)
+    elif any(x in t for x in ["s3://", "amazonaws", "storage.googleapis", "digitaloceanspaces", "blob.core.windows.net"]):
+        if any(x in t for x in ["200", "public", "listing", "allow"]):
+            return (
+                "☁️ Cloud Recon (🚨 ثغرة مستودع مكشوف)",
+                "🚨 Critical / High",
+                "• **توجيه المعلم:** المستودع السحابي مفتوح تماماً للعامة! ابحث فوراً عن تسريبات لملفات المصدر أو ملفات الكوكيز، أو بيانات الهوية الحساسة (PII).\n• **المنهجية المستهدفة:** التحقق من صلاحية القراءة والكتابة وعزل الأدلة بذكاء دون العبث بالبيانات.",
+                "aws s3 ls s3://[Bucket_Name] --no-sign-request"
+            )
+        else:
+            return (
+                "☁️ Cloud Recon (مستودع مغلق ظاهرياً)",
+                "Medium / Low",
+                "• **توجيه المعلم:** على الرغم من أن السرد العام مغلق، اختبر دائماً صلاحية الرفع العشوائي (PutObject) باستخدام حساب AWS مخصص لتثبيت الأثر الأمني.\n• **المنهجية المستهدفة:** اختبار صلاحيات المجموعات الموثقة (Authenticated Users).",
+                "aws s3 cp test.txt s3://[Bucket_Name]/test.txt"
+            )
+
+    # 7. Reverse DNS & Reverse IP and Domain
+    elif "ptr" in t or "reverse dns" in t or "reverse ip" in t:
+        return (
+            "🔄 Reverse DNS & Reverse IP Target Mapping",
+            "Informational / Medium",
+            "• **توجيه المعلم:** الفحص العكسي لـ IPs يسحب لك كافة النطاقات المستضافة على نفس السيرفر، مما يمهد لك الطريق لمعرفة إن كان هنالك موقع ويب ضعيف يشارك نفس البنية التحتية ويمكن اختراقه للوصول للهدف.\n• **المنهجية المستهدفة:** عمل مسح شامل لسجلات PTR على شريحة الـ IP المكتشفة.",
+            "dnsrecon -r [IP_Range] -t rvs"
+        )
+
+    # 8. DMARC Analysis & Demo Course Notes
+    elif "dmarc" in t or "_dmarc" in t or "p=none" in t:
+        if "p=none" in t:
+            return (
+                "📧 DMARC Email Security Analysis",
+                "Low / Informational (إلا إذا تم إثبات الـ Spoofing)",
+                "• **توجيه المعلم:** سياسة `p=none` تعني أن النطاق لا يمنع رسائل البريد المزورة بل يراقبها فقط. بعض البرامج تقبل هذه الثغرة إذا قمت بإثبات إمكانية إرسال بريد مزيف يصل إلى صندوق الوارد الرئيسي (Inbox) مباشرة بدون المرور بالـ Spam.\n• **المنهجية المستهدفة:** فحص سجلات الـ SPF والـ DMARC معاً واختبار الإرسال الفعلي.",
+                "spoofcheck.py -d target.com"
+            )
+        else:
+            return (
+                "📧 DMARC Email Security Analysis",
+                "Informational (محمي)",
+                "• **توجيه المعلم:** السجل مضبوط بشكل صحيح على سياسة الحظر (`p=reject` أو `p=quarantine`). هذا يعني أن النطاق محمي بشكل جيد ضد ثغرات الـ Email Spoofing المباشرة. انتقل لفحص الـ Subdomains.",
+                "dig txt _dmarc.target.com"
+            )
+
+    # 9. Subdomain Scraping & Scraping Secrets (Passive Enum)
+    elif any(x in t for x in ["subfinder", "assetfinder", "crt.sh", "certspotter"]):
+        return (
+            "🧬 Subdomain Scraping & Passive Enumeration",
+            "Informational (جمع أصول)",
+            "• **توجيه المعلم:** التجميع السلبي (Passive) سريع ولكنه يعطيك النطاقات التي يعرفها الجميع. سر النجاح هنا هو دمج أكثر من 5 مصادر (API Keys) داخل أداة `subfinder` لضمان سحب النطاقات الفرعية العميقة التي لم تظهر للمنافسين.\n• **المنهجية المستهدفة:** تجميع الأصول السلبي تمهيداً لتصفية المواقع الحية وعمل الـ Brute Force عليها تالياً.",
+            "subfinder -d target.com -all -recursive -o passive_subs.txt"
+        )
+
+    # 10. Subdomain Brute Force & Alteration, Permutation (Active Enum)
+    elif any(x in t for x in ["shuffledns", "puredns", "dnsgen", "brute", "permutation", "assetnote"]):
+        return (
+            "💥 Subdomain Brute Force & Alterations (Active Mode)",
+            "Informational / High (إذا اكتشف نطاق سري)",
+            "• **توجيه المعلم:** التخمين وتوليد التباديل الذكي (Alterations) باستخدام قاموس `Assetnote` القوي هو السلاح السري للعثور على ثغرات الـ Takeover والـ Dev Panels المنسية التي لا تظهر في سجلات الشهادات العامة (`crt.sh`).\n• **المنهجية المستهدفة:** استخدام أداة مثل `dnsgen` لتوليد الأسماء الذكية بناء على النتائج القديمة وتخمينها عبر محددات DNS سريعة.",
+            "dnsgen passive_subs.txt | puredns resolve -r resolvers.txt -o active_brute_subs.txt"
+        )
+
+    # 11. GitHub Enumeration & Secrets Leaks
+    elif any(x in t for x in ["github", "gitleaks", "trufflehog", "git-"]):
+        return (
+            "💻 GitHub Enumeration & Source Code Secrets Discovery",
+            "🚨 Critical / High",
+            "• **توجيه المعلم:** المطورون يرتكبون أخطاء كارثية برفع مفاتيح خاصة في مستودعاتهم العامة أو مستودعات الشركة المنسية على GitHub. ابحث عن ملفات التكوين (`.env`, `config.json`) والمفاتيح الممررة للخدمات.\n• **المنهجية المستهدفة:** الفحص العميق لتاريخ الالتزامات (Commit History) بحثاً عن مفاتيح تم حذفها ظاهرياً ولكنها بقيت في السجلات.",
+            "gitleaks detect --source . -v"
+        )
+
+    # 12. VHost Scanning (Virtual Hosts)
+    elif "vhost" in t or "virtual host" in t or "ffuf -w" in t and "host:" in t:
+        return (
+            "🏠 Virtual Host (VHost) Scanning & Fuzzing",
+            "High / Critical (عند العثور على سيرفر داخلي متاح علناً)",
+            "• **توجيه المعلم:** في كثير من الأحيان، خادم الويب يرفض إعطائك لوحة التحكم إذا طلبتها كنطاق فرعي عادي، ولكن عند التلاعب بالـ `Host Header` في الطلب يظن السيرفر أنك قادم من الشبكة الداخلية ويفتح لك الأبواب الخلفية المنسية.\n• **المنهجية المستهدفة:** عمل Fuzzing للـ Host Header ومقارنة حجم الاستجابة (Response Size).",
+            "ffuf -w words.txt -u https://target.com -H 'Host: FUZZ.target.com' -fs [Size_To_Ignore]"
+        )
+
+    # 13. Screenshotting & Visual Recon
+    elif any(x in t for x in ["screenshot", "gowitness", "aquatone", "eyewitness"]):
+        return (
+            "📸 Screenshotting & Visual Reconnaissance",
+            "Informational (منظم وموفر للوقت)",
+            "• **توجيه المعلم:** صائد الثغرات المحترف لا يفحص 5000 نطاق فرعي يدوياً بمتصفحه. الفرز البصري التلقائي يساعدك على عزل خوادم الويب المكسورة، لوحات تسجيل الدخول الخاصة بـ Grafana أو Jenkins أو Tomcat، وصفحات الخطأ 404 الجاهزة للـ Takeover بلمحة عين واحدة.\n• **المنهجية المستهدفة:** توليد ألبوم صور تفاعلي لكافة النطاقات الحية وتصنيفها حسب المظهر.",
+            "gowitness file -f live_urls.txt"
+        )
+
+    # 14. Prioritizing Recon Data & Asset Management
+    elif any(x in t for x in ["prioritiz", "matrix", "sorting", "status-code", "open port"]):
+        return (
+            "🎯 Prioritizing Recon Data & Target Selection Matrix",
+            "Informational (تنظيم تكتيكي صارم)",
+            "• **توجيه المعلم:** لا تهاجم الموقع عشوائياً. رتب مخرجاتك في مصفوفة أهداف: النطاقات التي تعطي استجابة `403 Forbidden` أو `401 Unauthorized` أو صفحات التطوير المستضافة على منافذ غير تقليدية (مثل 8080, 8443) هي التي تمتلك أعلى أولوية للفحص الفعلي (Fuzzing / Bypass).\n• **المنهجية المستهدفة:** فلترة مخرجات `httpx` والتركيز على أهداف القيمة العالية والتخلي عن الصفحات الساكنة الميتة.",
+            "cat httpx_results.txt | grep -E '403|401' > high_priority_targets.txt"
+        )
+
+    # 15. Shodan Video / Hunt & Additional Metadata Sources
+    elif "shodan" in t or "censys" in t or "zoomeye" in t:
+        return (
+            "🔎 Advanced Shodan Hunting & Infrastructure Metadata",
+            "Medium / High",
+            "• **توجيه المعلم:** شيردان يرى خلف الكواليس. استخدم الفلاتر المتقدمة (مثل `ssl.cert.serial` أو `http.html`) للعثور على السيرفرات الحقيقية للشركة التي تختبئ خلف حماية Cloudflare (ثغرة Cloudflare Bypass / Origin IP Leak).\n• **المنهجية المستهدفة:** استجواب الخادم مباشرة عبر عنوان الـ IP الحقيقي وتخطي جدار الحماية للبحث عن ثغرات حركية.",
+            "shodan search 'ssl:boardsbeyond.com' --fields ip_str,port,org"
+        )
+
+    # 16. الرد الافتراضي الذكي لمجتمع صائدي الثغرات
+    else:
+        return (
+            "📝 مخرجات فحص وتحليل عامة",
+            "Informational",
+            "• **توجيه المعلم:** تم استقبال البيانات بنجاح في قاعدة بيانات المستشار الميداني. لتجنب الوقوع في فخ الـ False Positives (النتائج الزائفة)، اشرع فوراً بتمرير هذه الأصول إلى أداة `httpx` لعزل الخوادم المستجيبة حالياً ومعرفة التقنيات المستخدمة خلفها قبل اختيار أداة الفحص الهجومي الفعلي.",
+            "httpx -l targets.txt -sc -td -title"
+        )
 
 # ==========================================
-# [3] محرك تحليل صائد الثغرات الذكي (Bug Bounty Mentor Engine)
+# [3] معالجة الرسائل النصية المخصصة (Custom Recon Input)
 # ==========================================
 
 async def analyze_user_recon(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """تحليل ذكي عميق لمدخلات الـ Bug Bounty بأسلوب مستشار أمني محترف"""
-    raw_text = update.message.text
-    user_text = raw_text.lower()
+    """استقبال مخرجات الريكون ومعالجتها بموجب المحرك الاستراتيجي المتطور لـ Bug Bounty"""
+    user_text = update.message.text
     
-    # تصنيفات تكتيكية ذكية مبنية على أنماط حقيقية (Regex & Context Rules)
-    findings_title = ""
-    severity = "Informational / Low"
-    methodology = ""
-    next_command = ""
-    
-    # 1. حالة مخرجات سجلات الـ DNS (TXT, CNAME, SPF)
-    if "spf1" in user_text or "google-site-verification" in user_text or "txt" in user_text or "cname" in user_text:
-        findings_title = "📋 تحليل سجلات الـ DNS و الـ TXT Records"
-        
-        # فحص ذكي إذا كان هناك تسريب أو احتمالية Subdomain Takeover
-        if "cname" in user_text and any(x in user_text for x in ["cloudfront", "s3", "github.io", "heroku", "azure"]):
-            severity = "High / Medium (احتمالية Subdomain Takeover)"
-            methodology = (
-                "• السجلات تحتوي على أصول سحابية عبر الـ CNAME.\n"
-                "• **نصيحة المعلم:** اختبر ما إذا كان هذا النطاق يشير إلى خدمة سحابية محذوفة أو غير محجوزة (Dangling DNS) لتوثيق ثغرة الاستيلاء على النطاق الفرعي."
-            )
-            next_command = "subjack -w subdomains.txt -t 100 -timeout 30 -o vuls.txt -ssl"
-        else:
-            severity = "Informational (بيانات عامة)"
-            methodology = (
-                "• هذه السجلات هي معلومات تحقق وإعدادات حماية طبيعية (مثل SPF و Google Verification).\n"
-                "• **نصيحة المعلم:** السجلات آمنة ولا تشكل ثغرة مباشرة. خطوتك التكتيكية التالية هي الانتقال لعمل Zone Transfer أو الانتقال لكشط النطاقات الفرعية النشطة."
-            )
-            next_command = "dig axfr @dns-server target.com"
+    # استدعاء المصنف الذكي المحدث للـ 24 مهارة
+    title, severity, methodology, next_command = advanced_hunter_classifier(user_text)
 
-    # 2. أصول التخزين السحابي والتسريبات (Buckets)
-    elif any(x in user_text for x in ["s3://", "amazonaws", "storage.googleapis", "digitaloceanspaces"]):
-        findings_title = "☁️ أصول تخزين سحابية مكتشفة (Cloud Buckets)"
-        if any(x in user_text for x in ["200", "public", "listing", "allow"]):
-            severity = "🚨 Critical / High (ثغرة مستودع مكشوف)"
-            methodology = (
-                "• المستودع يعيد استجابة مفتوحة أو يسمح بسرد الملفات (Listing).\n"
-                "• **نصيحة المعلم:** ابحث فوراً عن ملفات التكوين، قواعد البيانات المنسية، أو ملفات الحزم البرمجية لتأكيد الاختراق وعزل الـ PII (بيانات المستخدمين الحساسة)."
-            )
-            next_command = "aws s3 ls s3://[bucket-name] --no-sign-request"
-        else:
-            severity = "Medium"
-            methodology = (
-                "• تم العثور على اسم المستودع، لكن الصلاحيات المباشرة قد تكون مغلقة.\n"
-                "• **نصيحة المعلم:** اختبر صلاحية الكتابة والرفع العشوائي (Arbitrary File Upload) أو اختبر صلاحيات الـ Authenticated Users باستخدام حساب AWS خاص بك."
-            )
-            next_command = "aws s3 cp test.txt s3://[bucket-name]/test.txt"
-
-    # 3. ملفات الجافاسكريبت والتسريبات البرمجية (JS Files / Secrets)
-    elif ".js" in user_text or "token" in user_text or "api_" in user_text or "secret" in user_text:
-        findings_title = "🔑 تسريب مفاتيح أو تحليل ملفات JavaScript"
-        severity = "High / Critical (حسب نوع المفتاح)"
-        methodology = (
-            "• تم رصد مسارات لملفات برمجة واجهة المستخدم أو مفاتيح تمرير تفاعلية.\n"
-            "• **نصيحة المعلم:** لا تعتمد على مجرد ظهور كلمة Token. قم بفحص الملفات لاستخراج الـ Endpoints المخفية، أو التحقق من فعالية المفتاح المسرب (مثل اختبار مفاتيح AWS, Firebase, Stripe) محلياً لإثبات الأثر الأمني."
-        )
-        next_command = "secretfinder -i https://target.com/assets/main.js -o cli"
-
-    # 4. الواجهات البرمجية وبيئات التطوير (APIs / Dev / Staging)
-    elif any(x in user_text for x in ["api/", "v1/", "graphql", "swagger", "dev.", "staging.", "test."]):
-        findings_title = "🌐 واجهات ومنافذ بيئات التطوير والاختبار (Endpoints / Environments)"
-        severity = "High"
-        methodology = (
-            "• تم العثور على بيئة غير إنتاجية أو توثيق لواجهة برمجة تطبيقات.\n"
-            "• **نصيحة المعلم:** هذه الأصول منجم ذهب للـ Bug Bounty! ابحث عن واجهات التحكم غير المحمية بكلمة سر، واختبر الـ IDOR عبر التلاعب بالمعرفات الرقمية، أو ابحث عن ثغرات الـ Mass Assignment."
-        )
-        next_command = "ffuf -w api_routes.txt -u https://target.com/api/FUZZ -mc 200,401,403,500"
-
-    # 5. معطيات عامة / غير مصنفة
-    else:
-        findings_title = "📝 مخرجات استطلاع وفحص عام"
-        severity = "Informational"
-        methodology = (
-            "• تم استقبال البيانات بنجاح في نظام المعلم.\n"
-            "• **نصيحة المعلم:** لتجنب التشتت وتضييع الوقت وفحص أهداف خارج النطاق (Out of Scope)، ركز الآن على تصفية الخوادم الحية واستخراج الـ HTTP Status Codes والـ Technologies المستخدمة."
-        )
-        next_command = "httpx -l targets.txt -sc -td -title"
-
-    # بناء التقرير الاحترافي الصارم لـ Bug Bounty Hunter
+    # بناء هيكلية الرد الصارم المعتمد في مجتمع المختبرين المحترفين
     report = (
-        f"🎯 **[تقرير مستشار الـ Bug Bounty الميداني]**\n"
+        f"🎯 **[تقرير خبير الـ Bug Bounty الميداني]**\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"🔍 **نوع المدخلات المكتشفة:**\n{findings_title}\n\n"
-        f"⚠️ **الخطورة الحقيقية (Real Severity):** `{severity}`\n\n"
-        f"💡 **المنهجية وتوجيه المعلم (Hunter Methodology):**\n{methodology}\n\n"
-        f"💻 **الأمر التكتيكي الفعال للخطوة القادمة (Next Command):**\n"
+        f"🔍 **سياق الفحص المستهدف:**\n*{title}*\n\n"
+        f"⚠️ **الخطورة التقديرية للأصل (Severity):** `{severity}`\n\n"
+        f"💡 **توجيه المعلم والمنهجية (Hunter Methodology):**\n{methodology}\n\n"
+        f"💻 **الأمر الاستراتيجي الفعال لتشغيله الآن (Next Command):**\n"
         f"`{next_command}`\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👊 أرسل لي المخرجات الجديدة فور استخراجها، أو استخدم الأزرار للتنقل:"
+        f"👊 أرسل لي المخرجات القادمة فور خروجها من الطرفية (Terminal)، أو استخدم الأزرار:"
     )
 
-    keyboard = [[InlineKeyboardButton("🔝 القائمة الرئيسية", callback_data="go_to_bot_root")]]
+    keyboard = [[InlineKeyboardButton("🔝 العودة للقائمة الرئيسية", callback_data="go_to_bot_root")]]
     await update.message.reply_text(text=report, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 
 # ==========================================
@@ -197,11 +272,15 @@ async def analyze_user_recon(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     welcome_text = (
-        "⚔️ **مرحباً بك في محرك الـ Bug Bounty التكتيكي** ⚔️\n\n"
-        "أنا لست مجرد بوت عادي يقرأ كلمات مفتاحية عشوائية؛ لقد تم تحديث عقلي البرمجي لأعمل **كـ Mentor ومستشار أمني محترف لك في برامج مكافآت الثغرات**.\n\n"
-        "🤖 **ماذا يمكنك أن تفعل الآن؟**\n"
-        "• **أرسل لي أي مخرجات حرة فوراً:** (نتائج أدوات، سجلات DNS، روابط، ملفات جافاسكريبت، منافذ) وسأعطيك الفرز الحقيقي لخطورتها، نصيحة ميدانية مجربة، والأمر التكتيكي التالي لتشغيله.\n\n"
-        "👇 أو تنقل عبر الأنظمة المدمجة من اللوحة أدناه:"
+        "⚔️ **مرحباً بك في نظام الـ Bug Bounty Mentor المحترف** ⚔️\n\n"
+        "أنا الآن جاهز تماماً ومهيأ ومبرمج على **أحدث أدوات ومنهجيات ومفاهيم فحص الاستطلاع المتقدم (Recon)** المستخدمة بواسطة نخبة الباحثين الأمنيين عالمياً.\n\n"
+        "🧠 **ما الذي يميز عقلي البرمجي الآن؟**\n"
+        "لقد تعلمت وفهمت بعمق كامل تفاصيل خريطة الطريق الحركية:\n"
+        "• فحص الـ `ASN` وتجميع الـ `IP Blocks`.\n"
+        "• استغلال معرفات التتبع والتحليلات (`Ad & Analytics Relationships`).\n"
+        "• فحص الـ `VHost Scanning` وتكتيكات الـ `Alteration & Permutations` لـ `Assetnote`.\n"
+        "• تتبع سياق الـ `Reverse WHOIS` والتحقق الذكي لـ `Cloud Recon` و `GitHub Leaks`.\n\n"
+        "👇 اضغط على الزر أدناه وأرسل لي مخرجات أدواتك فوراً في الشات لفرزها تكتيكياً:"
     )
     await update.message.reply_text(text=welcome_text, reply_markup=get_welcome_menu(), parse_mode="Markdown")
 
@@ -217,7 +296,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "system_custom_input":
         await query.edit_message_text(
-            text="🧠 **وضع مستشار الـ Bug Bounty نشط**\n\nانسخ أي مخرجات ريكون أو مخرجات أدوات هنا مباشرة في الشات. سأقوم بتحليل السياق وفهمه كخبير أمني وليس كآلة صماء.",
+            text="🧠 **وضع مستشار ومحلل الـ Bug Bounty المتقدم نشط**\n\nانسخ أي مخرجات ريكون أو مخرجات أدوات أو بيانات أصول هنا مباشرة في الشات. سأقوم فوراً بتحديد سياق المنهجية وإرشادك للأمر التالي الفعال تكتيكياً لتشغيله.",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ تراجع", callback_data="go_to_bot_root")]]),
             parse_mode="Markdown"
         )
@@ -242,7 +321,17 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("nav_"):
         recon_key = data.replace("nav_", "")
         if recon_key in STRATEGIC_RECON:
-            response_text, next_step_key = format_recon_response(recon_key)
+            node = STRATEGIC_RECON[recon_key]
+            next_node_key = node["chain_next"]
+            next_node_title = STRATEGIC_RECON[next_node_key]["title"]
+            
+            response_text = (
+                f"📍 **{node['title']}**\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"📋 **الخطوات المنهجية (Methodology):**\n{node['methodology']}\n\n"
+                f"➡️ **Next Step:**\n{node['next_step']}\n\n"
+                f"💡 **Why this matters:**\n{node['why_matters']}\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n🔗 **المسار التالي التلقائي:** {next_node_title}"
+            )
             await query.edit_message_text(text=response_text, reply_markup=get_action_buttons(next_step_key), parse_mode="Markdown")
             return
 
@@ -284,7 +373,7 @@ def main():
     application.add_handler(CallbackQueryHandler(callback_router))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, analyze_user_recon))
     
-    print("🚀 تم إطلاق عقل المعلم لـ Bug Bounty بنجاح... جاهز لاستلام وتحليل مخرجاتك بدقة ميدانية!")
+    print("🚀 تم دمج الـ 24 مهارة تكتيكية بنجاح! البوت الآن جاهز لتقديم المشورة الأمنية المتقدمة لنخبة الصيادين...")
     application.run_polling()
 
 if __name__ == '__main__':
