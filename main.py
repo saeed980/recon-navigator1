@@ -1,112 +1,77 @@
 # main.py
 import os
-import sys
-import logging
 import re
 from dotenv import load_dotenv
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application, CommandHandler, CallbackQueryHandler, 
-    MessageHandler, filters, ContextTypes
-)
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# استيراد العقول البرمجية من مجلد modules
-try:
-    from modules.web_handlers import WEB_MATRIX
-    from modules.infra_handlers import INFRA_MATRIX
-    from modules.cloud_handlers import CLOUD_MATRIX
-    
-    # دمج كل المصفوفات في عقل تحليلي واحد موحد
-    MASTER_RECON_MATRIX = {**WEB_MATRIX, **INFRA_MATRIX, **CLOUD_MATRIX}
-except ImportError as e:
-    print(f"❌ خطأ حرج أثناء استيراد الملفات من مجلد modules: {e}")
-    sys.exit(1)
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+# استيراد المصانع البرمجية المحدثة
+from modules.web_handlers import WEB_MATRIX
+from modules.infra_handlers import INFRA_MATRIX
+from modules.cloud_handlers import CLOUD_MATRIX
 
 load_dotenv()
-TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
-if not TOKEN:
-    print("❌ خطأ حرج: لم يتم العثور على TELEGRAM_BOT_TOKEN في ملف .env")
-    sys.exit(1)
+def analyze_source_code(text):
+    """محلل ذكي للسورس كود الخام والصفحات للكشف عن الثغرات والحمايات"""
+    findings = []
+    
+    # كشف الحمايات وأنظمة الدفاع
+    if re.search(r"cloudflare|__cfduid|cf-ray", text, re.IGNORECASE):
+        findings.append(("🛡️ Cloudflare WAF", "تم رصد بصمة Cloudflare بالسورس كود. تجنب الفحص العشوائي، وابحث عن الـ Origin IP عبر Shodan/Censys لتخطي الحظر."))
+    if re.search(r"imperva|incapsula|visid_incap", text, re.IGNORECASE):
+        findings.append(("🛡️ Imperva / Incapsula WAF", "الهدف محمي بواسطة Imperva. استخدم ترويسات متغيرة وتجنب الأنماط الهجومية التقليدية لتفادي حظر الـ IP."))
+    if re.search(r"content-security-policy", text, re.IGNORECASE):
+        findings.append(("🔒 CSP (Content Security Policy)", "تم رصد سياسة أمان المحتوى. افحص قواعدها عبر c भी csp-evaluator لتحديد ثغرات التخطي مثل تجمعات الـ CDN الموثوقة."))
 
-def universal_hunter_analyzer(text_input: str):
-    raw_clean = text_input.lower()
+    # كشف تسريبات السورس كود والأخطاء
+    if re.search(r"error|exception|sql\s*syntax|mysql_fetch|uid", text, re.IGNORECASE):
+        findings.append(("🛢️ Input Filter / SQL Error Leak", "تسريب خطأ داخلي في السورس كود! هذا يشير لضعف في الفلترة (Input Filter). احقن علامات الاقتباس لفحص الـ SQLi."))
+    if re.search(r"secret|api[-_]key|password|bearer|token|credentials", text, re.IGNORECASE):
+        findings.append(("🔑 Credentials/Secrets Leak", "تم رصد كلمات مفتاحية تشير لتسريب مفاتيح برمجية حساسة داخل السورس كود. افحص القيم فوراً يدوياً."))
+        
+    return findings
+
+def hunt_intelligence(user_input):
+    """المحرك الاستخباراتي الشامل لمطابقة الـ Recon والـ Vulns"""
+    input_lower = user_input.lower()
     
-    # تحصين الـ ASN بشكل صارم عبر الـ Regex
-    asn_match = re.search(r"\basn\b|\bas\d{3,}\b", raw_clean)
+    # 1. أولاً: تشغيل فحص السورس كود التلقائي
+    code_leaks = analyze_source_code(user_input)
+    leak_report = ""
+    if code_leaks:
+        leak_report = "\n\n🚨 [تحليل السورس كود المباشر]:\n" + "\n".join([f"• *{f[0]}*: {f[1]}" for f in code_leaks])
+
+    # 2. ثانياً: البحث في المصفوفات الهجومية
+    all_matrices = {**WEB_MATRIX, **INFRA_MATRIX, **CLOUD_MATRIX}
     
-    for key, data in MASTER_RECON_MATRIX.items():
-        if key == "inf_asn" and not asn_match:
-            continue
-        if any(keyword in raw_clean for keyword in data["keywords"]):
-            return data["title"], data["severity"], data["methodology"], data["command"]
-            
-    return (
-        "📝 مخرجات استطلاع عامة / أصول خام (Raw Recon Inputs)",
-        "Informational",
-        "• تم استقبال المخرجات بنجاح وعزل الأصول البرمجية بالداخل.\n• تكتيكياً: مرر هذه القائمة فوراً إلى أداة `httpx` لعزل الخوادم المستجيبة حالياً ومعرفة الـ Status Codes وعناوين الصفحات قبل اختيار السلاح الهجومي التالي.",
-        "httpx -l targets.txt -sc -cl -title -td"
-    )
+    for key, data in all_matrices.items():
+        for keyword in data["keywords"]:
+            if keyword in input_lower:
+                return f"{data['title']}\n━━━━━━━━━━━━━━━━━━━━━━\n\n⚠️ الخطورة: {data['severity']}\n\n💡 المنهجية التكتيكية:\n{data['methodology']}\n\n💻 السلاح التنفيذي الشامل:\n`{data['command']}`{leak_report}"
+                
+    # الرد التكتيكي التلقائي في حال عدم مطابقة الكلمات لمنع الردود الغبية
+    return f"📝 أصول استطلاع خام / سورس كود غير مصنف\n━━━━━━━━━━━━━━━━━━━━━━\n\n💡 توجيه الخبير:\n• تم فحص النص/الرابط ولم يطابق كلمة مفتاحية صريحة لثغرة معينة.\n• تكتيكياً: إذا كان هذا النطاق جديداً، ابدأ بـ Subdomain Scraping ومطابقة العلاقات الإعلانية (Analytics Relationships) لبناء الخريطة أولاً.{leak_report}\n\n💻 الأمر المقترح:\n`httpx -l targets.txt -sc -cl -title -td`"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    welcome_text = (
-        "⚔️ **مرحباً بك في نظام Bug Bounty Mentor V2 (المعماري الجزئي)** ⚔️\n\n"
-        "أنا متصل الآن بـ **العقول البرمجية الفرعية** وجاهز لتحليل أي بيانات ترفعها لي.\n\n"
-        "ارمي لي أي مخرجات نصية أو ملفات أدوات مباشرة!"
-    )
-    await update.message.reply_text(text=welcome_text, parse_mode="Markdown")
+    await update.message.reply_text("⚡ مرحبًا بك في مصفوفة Elite Bug Bounty Hunter. أرسل لي أي رابط، نطاق، ASN، أو سورس كود خام وسأقوم بتحليله تكتيكياً فوراً.")
 
-async def handle_user_inputs(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        user_text = update.message.text
-        title, severity, methodology, command = universal_hunter_analyzer(user_text)
-        
-        report = (
-            f"🎯 **[تقرير خبير الـ Bug Bounty الميداني]**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🔍 **السياق التكنولوجي المكتشف:**\n*{title}*\n\n"
-            f"⚠️ **الخطورة التقديرية للأصل (Severity):** `{severity}`\n\n"
-            f"💡 **توجيه المعلم التكتيكي (Hunter Methodology):**\n{methodology}\n\n"
-            f"💻 **الأمر الاستراتيجي الفعال لتشغيله الآن:**\n"
-            f"`{command}`\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"👊 انتظر مخرجات الأداة التالية وشاركها معي فوراً!"
-        )
-        await update.message.reply_text(text=report, parse_mode="Markdown")
-    except Exception as e:
-        logger.error(f"Error: {e}")
-
-async def handle_document_outputs(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        document = update.message.document
-        file = await context.bot.get_file(document.file_id)
-        file_bytes = await file.download_as_bytearray()
-        file_content = file_bytes.decode('utf-8', errors='ignore')
-        
-        title, severity, methodology, command = universal_hunter_analyzer(file_content[:5000])
-        
-        report = (
-            f"📁 **[تحليل ملف المخرجات المرفوع: {document.file_name}]**\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🔍 **السياق المكتشف داخل الملف:**\n*{title}*\n\n"
-            f"💡 **التوجيه التكتيكي الفوري:**\n{methodology}\n\n"
-            f"💻 **الأمر المقترح لتشغيله الآن:**\n`{command}`\n"
-        )
-        await update.message.reply_text(text=report, parse_mode="Markdown")
-    except Exception as e:
-        logger.error(f"Error in document: {e}")
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_text = update.message.text
+    await update.message.reply_chat_action("typing")
+    response = hunt_intelligence(user_text)
+    await update.message.reply_text(response, parse_mode="Markdown")
 
 def main():
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_user_inputs))
-    application.add_handler(MessageHandler(filters.Document.ALL, handle_document_outputs))
-    
-    print("🚀 المحرك النظيف متصل بجميع الموديولات وجاهز للعمل الميداني...")
-    application.run_polling()
+    if not TOKEN:
+        print("❌ خطأ حرج: لم يتم العثور على TELEGRAM_TOKEN في ملف .env")
+        return
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("🚀 البوت يعمل الآن بكفاءة الخبير النخبوية...")
+    app.run_polling()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
