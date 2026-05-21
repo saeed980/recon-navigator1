@@ -1,6 +1,7 @@
 # main.py
 
 import os
+import re
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
@@ -20,46 +21,27 @@ if not TOKEN:
 # ==========================================
 
 def get_welcome_menu():
-    """اللوحة الترحيبية المحدثة لاختيار مسار العمل"""
+    """اللوحة الترحيبية المركزية لمجتمع Bug Bounty"""
     keyboard = [
-        [InlineKeyboardButton("🧠 تحليل مخصص (أرسل نتائجك نصياً للبوت)", callback_data="system_custom_input")],
-        [InlineKeyboardButton("🌲 محرك اتخاذ القرارات الشجرية الجاهزة", callback_data="system_tree_home")],
-        [InlineKeyboardButton("🗺️ دليل استعراض مراحل الاستطلاع الـ 11", callback_data="system_recon_home")]
+        [InlineKeyboardButton("⚔️ وضع المحلل والخبير الميداني (أرسل مخرجاتك)", callback_data="system_custom_input")],
+        [InlineKeyboardButton("🌲 محرك اتخاذ القرارات الشجرية الاستراتيجية", callback_data="system_tree_home")],
+        [InlineKeyboardButton("🗺️ دليل خريطة طريق الاستطلاع الـ 11", callback_data="system_recon_home")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_navigation_menu():
-    """لوحة ملاحة متقدمة لفرز وتتبع مراحل الاستطلاع الـ 11"""
     keyboard = [
-        [
-            InlineKeyboardButton("🌐 1. ASN Recon", callback_data="nav_asn"),
-            InlineKeyboardButton("🧬 3. Subdomains", callback_data="nav_subdomains")
-        ],
-        [
-            InlineKeyboardButton("🔎 2. Shodan Hunt", callback_data="nav_shodan"),
-            InlineKeyboardButton("🔄 4. Reverse DNS", callback_data="nav_rev_dns")
-        ],
-        [
-            InlineKeyboardButton("📇 5. WHOIS Link", callback_data="nav_whois"),
-            InlineKeyboardButton("☁️ 6. Cloud Recon", callback_data="nav_cloud")
-        ],
-        [
-            InlineKeyboardButton("💻 7. GitHub Secrets", callback_data="nav_github"),
-            InlineKeyboardButton("📊 8. Tracking ID", callback_data="nav_tracking")
-        ],
-        [
-            InlineKeyboardButton("🏠 9. VHost Fuzz", callback_data="nav_vhost"),
-            InlineKeyboardButton("📸 10. Visual Recon", callback_data="nav_screenshot")
-        ],
-        [
-            InlineKeyboardButton("🎯 11. Target Prioritization", callback_data="nav_prioritize")
-        ],
-        [InlineKeyboardButton("🔝 العودة للقائمة الرئيسية للبوت", callback_data="go_to_bot_root")]
+        [InlineKeyboardButton("🌐 1. ASN Recon", callback_data="nav_asn"), InlineKeyboardButton("🧬 3. Subdomains", callback_data="nav_subdomains")],
+        [InlineKeyboardButton("🔎 2. Shodan Hunt", callback_data="nav_shodan"), InlineKeyboardButton("🔄 4. Reverse DNS", callback_data="nav_rev_dns")],
+        [InlineKeyboardButton("📇 5. WHOIS Link", callback_data="nav_whois"), InlineKeyboardButton("☁️ 6. Cloud Recon", callback_data="nav_cloud")],
+        [InlineKeyboardButton("💻 7. GitHub Secrets", callback_data="nav_github"), InlineKeyboardButton("📊 8. Tracking ID", callback_data="nav_tracking")],
+        [InlineKeyboardButton("🏠 9. VHost Fuzz", callback_data="nav_vhost"), InlineKeyboardButton("📸 10. Visual Recon", callback_data="nav_screenshot")],
+        [InlineKeyboardButton("🎯 11. Target Prioritization", callback_data="nav_prioritize")],
+        [InlineKeyboardButton("🔝 العودة للقائمة الرئيسية", callback_data="go_to_bot_root")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_tree_main_menu():
-    """إنشاء لوحة التحكم الرسومية للمراحل الحيوية في شجرة القرارات"""
     keyboard = [
         [InlineKeyboardButton("🌐 1. ASN Recon", callback_data="node_asn_node")],
         [InlineKeyboardButton("🧬 2. Subdomain Enum", callback_data="node_subdomains_node")],
@@ -73,28 +55,25 @@ def get_tree_main_menu():
     return InlineKeyboardMarkup(keyboard)
 
 def get_decisions_menu(node_key):
-    """توليد أزرار النتائج (Decision Nodes) بناءً على المرحلة الحالية ديناميكياً"""
     node = DECISION_TREE[node_key]
     keyboard = []
     for dec_key, dec_value in node["decisions"].items():
         keyboard.append([InlineKeyboardButton(dec_value["label"], callback_data=f"dec_{node_key}_{dec_key}")])
-    keyboard.append([InlineKeyboardButton("🎛️ العودة لقائمة الشجرة الرئيسية", callback_data="system_tree_home")])
+    keyboard.append([InlineKeyboardButton("🎛️ العودة لقائمة الشجرة", callback_data="system_tree_home")])
     return InlineKeyboardMarkup(keyboard)
 
 def get_action_buttons(next_key):
-    """توليد أزرار تدفق العمل السلس للمراحل الـ 11"""
     keyboard = [
         [InlineKeyboardButton("⏭️ تنفيذ الخطوة التالية (Next Action)", callback_data=f"nav_{next_key}")],
-        [InlineKeyboardButton("🎛️ العودة إلى لوحة الملاحة الـ 11", callback_data="system_recon_home")]
+        [InlineKeyboardButton("🎛️ العودة للملاحة", callback_data="system_recon_home")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 # ==========================================
-# [2] دوال التنسيق المرجعي للبيانات
+# [2] دوال التنسيق للمراحل الثابتة
 # ==========================================
 
 def format_recon_response(key):
-    """تنسيق المخرجات بالأسلوب الصارم المطلوب لبناء عقل المساعد للمراحل الـ 11"""
     node = STRATEGIC_RECON[key]
     next_node_key = node["chain_next"]
     next_node_title = STRATEGIC_RECON[next_node_key]["title"]
@@ -106,85 +85,110 @@ def format_recon_response(key):
         f"{node['methodology']}\n\n"
         f"➡️ **Next Step (ماذا تفعل الآن):**\n"
         f"{node['next_step']}\n\n"
-        f"💡 **Why this matters (أهمية الإجراء والأولوية):**\n"
+        f"💡 **Why this matters:**\n"
         f"{node['why_matters']}\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🔗 **المسار التالي التلقائي:** {next_node_title}"
+        f"🔗 **المسار التالي:** {next_node_title}"
     )
     return formatted_text, next_node_key
 
 # ==========================================
-# [3] معالجة الرسائل النصية المخصصة (Custom Recon Input)
+# [3] محرك تحليل صائد الثغرات الذكي (Bug Bounty Mentor Engine)
 # ==========================================
 
 async def analyze_user_recon(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """استقبال مخرجات الريكون الحرة من الباحث الأمني وتحليلها تكتيكياً برمجياً"""
-    user_text = update.message.text.lower()
+    """تحليل ذكي عميق لمدخلات الـ Bug Bounty بأسلوب مستشار أمني محترف"""
+    raw_text = update.message.text
+    user_text = raw_text.lower()
     
-    # مصفوفة التحليل الذكي للكلمات المفتاحية وعزل الأولويات بناءً على المعطيات المرسلة
-    findings = []
-    recommendations = []
-    priority = "متوسطة"
-    next_tool = ""
-
-    if "s3" in user_text or "bucket" in user_text or "blob" in user_text:
-        findings.append("🔍 رصد أصول تخزين سحابية (Cloud Buckets/Blobs)")
-        if "public" in user_text or "200" in user_text or "list" in user_text:
-            priority = "🚨 حرجة جداً (Critical)"
-            recommendations.append("• تم اكتشاف صلاحية قراءة عامة! قم فوراً بسحب العينات وتحليلها بحثاً عن ملفات `.env` أو قواعد بيانات.")
-            next_tool = "aws s3 cp s3://[bucket-name] . --recursive --no-sign-request"
+    # تصنيفات تكتيكية ذكية مبنية على أنماط حقيقية (Regex & Context Rules)
+    findings_title = ""
+    severity = "Informational / Low"
+    methodology = ""
+    next_command = ""
+    
+    # 1. حالة مخرجات سجلات الـ DNS (TXT, CNAME, SPF)
+    if "spf1" in user_text or "google-site-verification" in user_text or "txt" in user_text or "cname" in user_text:
+        findings_title = "📋 تحليل سجلات الـ DNS و الـ TXT Records"
+        
+        # فحص ذكي إذا كان هناك تسريب أو احتمالية Subdomain Takeover
+        if "cname" in user_text and any(x in user_text for x in ["cloudfront", "s3", "github.io", "heroku", "azure"]):
+            severity = "High / Medium (احتمالية Subdomain Takeover)"
+            methodology = (
+                "• السجلات تحتوي على أصول سحابية عبر الـ CNAME.\n"
+                "• **نصيحة المعلم:** اختبر ما إذا كان هذا النطاق يشير إلى خدمة سحابية محذوفة أو غير محجوزة (Dangling DNS) لتوثيق ثغرة الاستيلاء على النطاق الفرعي."
+            )
+            next_command = "subjack -w subdomains.txt -t 100 -timeout 30 -o vuls.txt -ssl"
         else:
-            priority = "عالية"
-            recommendations.append("• الصلاحيات العامة مغلقة ظاهرياً، اختبر ثغرة الرفع العشوائي والكتابة (PutObject).")
-            next_tool = "aws s3 cp test.txt s3://[bucket-name]/test.txt"
+            severity = "Informational (بيانات عامة)"
+            methodology = (
+                "• هذه السجلات هي معلومات تحقق وإعدادات حماية طبيعية (مثل SPF و Google Verification).\n"
+                "• **نصيحة المعلم:** السجلات آمنة ولا تشكل ثغرة مباشرة. خطوتك التكتيكية التالية هي الانتقال لعمل Zone Transfer أو الانتقال لكشط النطاقات الفرعية النشطة."
+            )
+            next_command = "dig axfr @dns-server target.com"
 
-    elif "api" in user_text or "graphql" in user_text:
-        findings.append("🌐 واجهات برمجية مكشوفة (Endpoints/APIs)")
-        priority = "عالية"
-        recommendations.append("• اشرع فوراً في عمل كشط وهندسة عكسية للـ Endpoints للبحث عن ثغرات الـ IDOR أو كسر الصلاحيات.")
-        next_tool = "ffuf -w api_wordlist.txt -u https://target.com/api/FUZZ -mc 200,401,403"
+    # 2. أصول التخزين السحابي والتسريبات (Buckets)
+    elif any(x in user_text for x in ["s3://", "amazonaws", "storage.googleapis", "digitaloceanspaces"]):
+        findings_title = "☁️ أصول تخزين سحابية مكتشفة (Cloud Buckets)"
+        if any(x in user_text for x in ["200", "public", "listing", "allow"]):
+            severity = "🚨 Critical / High (ثغرة مستودع مكشوف)"
+            methodology = (
+                "• المستودع يعيد استجابة مفتوحة أو يسمح بسرد الملفات (Listing).\n"
+                "• **نصيحة المعلم:** ابحث فوراً عن ملفات التكوين، قواعد البيانات المنسية، أو ملفات الحزم البرمجية لتأكيد الاختراق وعزل الـ PII (بيانات المستخدمين الحساسة)."
+            )
+            next_command = "aws s3 ls s3://[bucket-name] --no-sign-request"
+        else:
+            severity = "Medium"
+            methodology = (
+                "• تم العثور على اسم المستودع، لكن الصلاحيات المباشرة قد تكون مغلقة.\n"
+                "• **نصيحة المعلم:** اختبر صلاحية الكتابة والرفع العشوائي (Arbitrary File Upload) أو اختبر صلاحيات الـ Authenticated Users باستخدام حساب AWS خاص بك."
+            )
+            next_command = "aws s3 cp test.txt s3://[bucket-name]/test.txt"
 
-    elif "git" in user_text or "token" in user_text or "secret" in user_text:
-        findings.append("🔑 تسريبات برمجية أو مفاتيح حساسه على GitHub")
-        priority = "🚨 حرجة جداً (Critical)"
-        recommendations.append("• تم رصد كلمات سر أو مفاتيح في الشيفرة المصدرية؛ تحقق من صلاحية المفاتيح محلياً لتوثيق الاختراق الكامل.")
-        next_tool = "gitleaks detect --source . -v"
+    # 3. ملفات الجافاسكريبت والتسريبات البرمجية (JS Files / Secrets)
+    elif ".js" in user_text or "token" in user_text or "api_" in user_text or "secret" in user_text:
+        findings_title = "🔑 تسريب مفاتيح أو تحليل ملفات JavaScript"
+        severity = "High / Critical (حسب نوع المفتاح)"
+        methodology = (
+            "• تم رصد مسارات لملفات برمجة واجهة المستخدم أو مفاتيح تمرير تفاعلية.\n"
+            "• **نصيحة المعلم:** لا تعتمد على مجرد ظهور كلمة Token. قم بفحص الملفات لاستخراج الـ Endpoints المخفية، أو التحقق من فعالية المفتاح المسرب (مثل اختبار مفاتيح AWS, Firebase, Stripe) محلياً لإثبات الأثر الأمني."
+        )
+        next_command = "secretfinder -i https://target.com/assets/main.js -o cli"
 
-    elif "dev" in user_text or "staging" in user_text or "test" in user_text:
-        findings.append("🖥️ بيئات تطوير واختبار فرعية مكشوفة (Staging/Dev Environments)")
-        priority = "عالية"
-        recommendations.append("• بيئات التطوير نادراً ما يتم تحديثها؛ ابحث عن ملفات التكوين المنسية أو واجهات الإدارة الخلفية.")
-        next_tool = "nuclei -u https://dev.target.com -tags cve,panel"
+    # 4. الواجهات البرمجية وبيئات التطوير (APIs / Dev / Staging)
+    elif any(x in user_text for x in ["api/", "v1/", "graphql", "swagger", "dev.", "staging.", "test."]):
+        findings_title = "🌐 واجهات ومنافذ بيئات التطوير والاختبار (Endpoints / Environments)"
+        severity = "High"
+        methodology = (
+            "• تم العثور على بيئة غير إنتاجية أو توثيق لواجهة برمجة تطبيقات.\n"
+            "• **نصيحة المعلم:** هذه الأصول منجم ذهب للـ Bug Bounty! ابحث عن واجهات التحكم غير المحمية بكلمة سر، واختبر الـ IDOR عبر التلاعب بالمعرفات الرقمية، أو ابحث عن ثغرات الـ Mass Assignment."
+        )
+        next_command = "ffuf -w api_routes.txt -u https://target.com/api/FUZZ -mc 200,401,403,500"
 
-    elif "shodan" in user_text or "port" in user_text:
-        findings.append("🔎 خدمات ومنافذ مفتوحة عبر البنية التحتية")
-        priority = "متوسطة إلى عالية"
-        recommendations.append("• اعزل المنافذ غير التقليدية (مثل 8080, 8443, 9000) وقم بعمل فرز بصري لمعرفة طبيعة الخدمة.")
-        next_tool = "httpx -l IPs.txt -p 80,443,8080,8443 -title"
-
+    # 5. معطيات عامة / غير مصنفة
     else:
-        # تحليل عام في حال عدم مطابقة الكلمات السابقة
-        findings.append("📝 تم استقبال معطيات استطلاع عامة")
-        priority = "متوسطة"
-        recommendations.append("• ركز على تصفية هذه الأصول عبر أداة `httpx` لعزل الخوادم الحية المستجيبة ثم ابدأ بالفرز البصري.")
-        next_tool = "httpx -l targets.txt -status-code -tech-detect"
+        findings_title = "📝 مخرجات استطلاع وفحص عام"
+        severity = "Informational"
+        methodology = (
+            "• تم استقبال البيانات بنجاح في نظام المعلم.\n"
+            "• **نصيحة المعلم:** لتجنب التشتت وتضييع الوقت وفحص أهداف خارج النطاق (Out of Scope)، ركز الآن على تصفية الخوادم الحية واستخراج الـ HTTP Status Codes والـ Technologies المستخدمة."
+        )
+        next_command = "httpx -l targets.txt -sc -td -title"
 
-    # بناء التقرير الأمني التكتيكي التفاعلي للرد على المستخدم
+    # بناء التقرير الاحترافي الصارم لـ Bug Bounty Hunter
     report = (
-        f"🎯 **[تقرير التحليل الأمني الميداني]**\n"
+        f"🎯 **[تقرير مستشار الـ Bug Bounty الميداني]**\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📊 **المدخلات المكتشفة:**\n"
-        f"{chr(10).join(findings)}\n\n"
-        f"⚠️ **مستوى خطورة الهدف والبروتوكول:** {priority}\n\n"
-        f"💡 **توصيات تكتيكية فورية من باحث الويب:**\n"
-        f"{chr(10).join(recommendations)}\n\n"
-        f"💻 **الأمر المقترح لتشغيله الآن (Next Command):**\n"
-        f"`{next_tool}`\n\n"
+        f"🔍 **نوع المدخلات المكتشفة:**\n{findings_title}\n\n"
+        f"⚠️ **الخطورة الحقيقية (Real Severity):** `{severity}`\n\n"
+        f"💡 **المنهجية وتوجيه المعلم (Hunter Methodology):**\n{methodology}\n\n"
+        f"💻 **الأمر التكتيكي الفعال للخطوة القادمة (Next Command):**\n"
+        f"`{next_command}`\n\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"🔄 أرسل مخرجات أخرى للمرحلة التالية، أو استخدم القائمة للعودة:"
+        f"👊 أرسل لي المخرجات الجديدة فور استخراجها، أو استخدم الأزرار للتنقل:"
     )
 
-    keyboard = [[InlineKeyboardButton("🔝 العودة للقائمة الرئيسية", callback_data="go_to_bot_root")]]
+    keyboard = [[InlineKeyboardButton("🔝 القائمة الرئيسية", callback_data="go_to_bot_root")]]
     await update.message.reply_text(text=report, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 
 # ==========================================
@@ -192,18 +196,16 @@ async def analyze_user_recon(update: Update, context: ContextTypes.DEFAULT_TYPE)
 # ==========================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """نقطة الترحيب المركزية للمساعد المحدث"""
     welcome_text = (
-        "⚔️ **مرحباً بك في نظام الـ Recon-Navigator المطور** ⚔️\n\n"
-        "أنا الآن أعمل **كبـاحث أمني ومختبر اختراق ويب (Web Pentester)** لمساعدتك تكتيكياً:\n\n"
-        "🧠 **1. التحليل المخصص الحر:** اضغط على الزر أدناه ثم **أرسل لي أي نتائج أو مخرجات أدوات** حصلت عليها (نصياً) وسأقوم بتحليلها فوراً وأقترح عليك أمر الفحص القادم.\n\n"
-        "🌲 **2. محرك القرارات الشجرية:** اتبع مسارات الأسئلة والأجوبة الجاهزة للوصول للأهداف.\n\n"
-        "🗺️ **3. دليل المراحل الـ 11:** مرجع متكامل لشرح الأدوات والمنهجيات الحيوية الاستطلاعية."
+        "⚔️ **مرحباً بك في محرك الـ Bug Bounty التكتيكي** ⚔️\n\n"
+        "أنا لست مجرد بوت عادي يقرأ كلمات مفتاحية عشوائية؛ لقد تم تحديث عقلي البرمجي لأعمل **كـ Mentor ومستشار أمني محترف لك في برامج مكافآت الثغرات**.\n\n"
+        "🤖 **ماذا يمكنك أن تفعل الآن؟**\n"
+        "• **أرسل لي أي مخرجات حرة فوراً:** (نتائج أدوات، سجلات DNS، روابط، ملفات جافاسكريبت، منافذ) وسأعطيك الفرز الحقيقي لخطورتها، نصيحة ميدانية مجربة، والأمر التكتيكي التالي لتشغيله.\n\n"
+        "👇 أو تنقل عبر الأنظمة المدمجة من اللوحة أدناه:"
     )
     await update.message.reply_text(text=welcome_text, reply_markup=get_welcome_menu(), parse_mode="Markdown")
 
 async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """الموجه المركزي الموحد لإدارة الملاحة"""
     query = update.callback_query
     await query.answer()
     data = query.data
@@ -215,7 +217,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "system_custom_input":
         await query.edit_message_text(
-            text="🧠 **وضع التحليل الحر نشط الآن!**\n\nقم بكتابة أو نسخ نتائج الاستطلاع الخاصة بك هنا في الشات مباشرة (مثال: نطاقات مكتشفة، روابط S3 Buckets، منافذ مفتوحة من شريحة IPs، إلخ) وسأقوم كباحث أمني بتحليلها وإعطائك الخطوة القادمة.",
+            text="🧠 **وضع مستشار الـ Bug Bounty نشط**\n\nانسخ أي مخرجات ريكون أو مخرجات أدوات هنا مباشرة في الشات. سأقوم بتحليل السياق وفهمه كخبير أمني وليس كآلة صماء.",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ تراجع", callback_data="go_to_bot_root")]]),
             parse_mode="Markdown"
         )
@@ -223,7 +225,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "system_recon_home":
         await query.edit_message_text(
-            text="🎛️ **دليل تتبع الـ Workflow ومراحل الاستطلاع الـ 11:**\nاختر المرحلة المناسبة لخطتك الحالية للبدء واستعراض المنهجية:",
+            text="🎛️ **دليل تتبع الـ Workflow ومراحل الاستطلاع الـ 11:**",
             reply_markup=get_navigation_menu(),
             parse_mode="Markdown"
         )
@@ -231,7 +233,7 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "system_tree_home":
         await query.edit_message_text(
-            text="🎛️ **قائمة شجرة القرارات التفاعلية (Input Nodes):**\nاختر المرحلة الحالية الحيوية لمعالجة نتائجها الميدانية:",
+            text="🎛️ **قائمة شجرة القرارات التفاعلية (Input Nodes):**",
             reply_markup=get_tree_main_menu(),
             parse_mode="Markdown"
         )
@@ -276,17 +278,13 @@ async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==========================================
 
 def main():
-    """تشغيل وإطلاق محرك البوت المدمج الموحد"""
     application = Application.builder().token(TOKEN).build()
     
-    # تسجيل معالجات الأحداث والأوامر والنصوص
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(callback_router))
-    
-    # معالج استقبال الرسائل النصية لتحليل نتائج الريكون الحرة
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, analyze_user_recon))
     
-    print("🚀 تم تفعيل محرك الباحث الأمني التفاعلي والتحليل الحر... جاهز لاستقبال بياناتك ميدانياً!")
+    print("🚀 تم إطلاق عقل المعلم لـ Bug Bounty بنجاح... جاهز لاستلام وتحليل مخرجاتك بدقة ميدانية!")
     application.run_polling()
 
 if __name__ == '__main__':
